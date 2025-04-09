@@ -6,7 +6,7 @@ export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') {
     return false;
   }
-  
+
   return sessionStorage.getItem('isAuthenticated') === 'true';
 };
 
@@ -22,13 +22,38 @@ export const setAuthenticated = (status: boolean): void => {
 };
 
 // Login function
-export const login = (username: string, password: string): boolean => {
-  // Simple authentication logic
-  if (username === 'root' && password === 'root') {
-    setAuthenticated(true);
-    return true;
+export const login = async (username: string, password: string): Promise<boolean> => {
+  try {
+    // Call the login API endpoint
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+
+    // If login was successful, set authenticated status
+    if (data.message === 'Login successful') {
+      setAuthenticated(true);
+      // Store user data if needed
+      if (data.user) {
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+      }
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Login error:', error);
+    return false;
   }
-  return false;
 };
 
 // Logout function
